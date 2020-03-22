@@ -3,7 +3,7 @@ function [sumt, sig_time,max_z,time_pn2]= cluster_pairedtest_final_perm(data_wd,
 'paired_perm'
 %先算原样本的t值
 data_wd=data_wd(:,n2:end);
-difmap=mean(data_wd(1:n1,:))-mean(data_wd(n1+1:end,:));
+difmap=nanmean(data_wd(1:n1,:))-nanmean(data_wd(n1+1:end,:));
 %boot
 difmap_b=[];
 for j=1:bootnum
@@ -15,16 +15,17 @@ for j=1:bootnum
     data_wdb=[id_b,data_wd];
 	data_wdb=sortrows(data_wdb,1);
 	data_wdb(:,1)=[];
-    difmap_b(j,:)=mean(data_wdb(1:n1,:))-mean(data_wdb(n1+1:end,:));
+    difmap_b(j,:)=nanmean(data_wdb(1:n1,:))-nanmean(data_wdb(n1+1:end,:));
 end
 
-difmap_z=(difmap-mean(difmap_b,1))./std(difmap_b,[],1);
+difmap_z=(difmap-nanmean(difmap_b,1))./nanstd(difmap_b,[],1);
 difmap_z(isnan(difmap_z))=0;
 
 difmap_p=(1-normcdf(abs(difmap_z)))*2; % for two tailed
 difmap_zthresh=difmap_p;
-difmap_zthresh(difmap_zthresh > p_value) = 0;
-difmap_zthresh(difmap_zthresh~=0)=1;
+difmap_zthresh(difmap_zthresh >= p_value) = 10;
+difmap_zthresh(difmap_zthresh~=10)=1;
+difmap_zthresh(difmap_zthresh==10)=0;
 sumt_id = bwconncomp(difmap_zthresh);
 sig_time=sumt_id.PixelIdxList;
 %clustsum_dif_all=[];
@@ -41,7 +42,9 @@ for j=1:bootnum
     difmap_z_b(isnan(difmap_z_b))=0;
     difmap_b_p=(1-normcdf(abs(difmap_z_b)))*2; % for two tailed
     difmap_b_zthresh=difmap_b_p;
-    difmap_b_zthresh(difmap_b_zthresh > p_value) = 0;
+    difmap_b_zthresh(difmap_b_zthresh >= p_value) = 10;
+    difmap_b_zthresh(difmap_b_zthresh~=10)=1;
+    difmap_b_zthresh(difmap_b_zthresh==10)=0;
     sumt_id_b = bwconncomp(difmap_b_zthresh);
     %clustsum_dif_all=[];
     sumt_b=[];

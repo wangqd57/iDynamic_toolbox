@@ -4,23 +4,21 @@ function [sumt, sig_time,max_z,time_pn2]= cluster_2test_final_perm(data_wd,n1,n2
 %先算原样本的t值
 data_wd=data_wd(:,n2:end);
 difmap=nanmean(data_wd(1:n1,:))-nanmean(data_wd(n1+1:end,:));
-difmap_b=[];
 for j=1:bootnum
     id_b=randsample(size(data_wd,1),size(data_wd,1),false);
     data_wdb=data_wd(id_b,:);
     difmap_b(j,:)=nanmean(data_wdb(1:n1,:))-nanmean(data_wdb(n1+1:end,:));
 end
 
-difmap_z=(difmap-nanmean(difmap_b,1))./nanstd(difmap_b,[],1);
+difmap_z=(difmap-nanmean(difmap_b,1))./std(difmap_b,[],1);
 difmap_z(isnan(difmap_z))=0;
 
 %boot
-%difmap_b=[];
+difmap_b=[];
 difmap_p=(1-normcdf(abs(difmap_z)))*2; % for two tailed
 difmap_zthresh=difmap_p;
-difmap_zthresh(difmap_zthresh >= p_value) = 10;
-difmap_zthresh(difmap_zthresh~=10)=1;
-difmap_zthresh(difmap_zthresh==10)=0;
+difmap_zthresh(difmap_zthresh > p_value) = 0;
+difmap_zthresh(difmap_zthresh~=0)=1;
 sumt_id = bwconncomp(difmap_zthresh);
 sig_time=sumt_id.PixelIdxList;
 %clustsum_dif_all=[];
@@ -33,13 +31,11 @@ end
 %%
 max_z=[];
 for j=1:bootnum
-    difmap_z_b=(difmap_b(j,:)-nanmean(difmap_b,1))./nanstd(difmap_b,[],1);
+    difmap_z_b=(difmap_b(j,:)-nanmean(difmap_b,1))./std(difmap_b,[],1);
     difmap_z_b(isnan(difmap_z_b))=0;
     difmap_b_p=(1-normcdf(abs(difmap_z_b)))*2; % for two tailed
     difmap_b_zthresh=difmap_b_p;
-    difmap_b_zthresh(difmap_b_zthresh >= p_value) = 10;
-    difmap_b_zthresh(difmap_b_zthresh~=10)=1;
-    difmap_b_zthresh(difmap_b_zthresh==10)=0;
+    difmap_b_zthresh(difmap_b_zthresh > p_value) = 0;
     sumt_id_b = bwconncomp(difmap_b_zthresh);
     %clustsum_dif_all=[];
     sumt_b=[];
@@ -57,7 +53,7 @@ for j=1:bootnum
 end
 %%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% non distribution %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-clustsum_dif_z=(sumt-nanmean(max_z))./nanstd(max_z);
+clustsum_dif_z=(sumt-nanmean(max_z))./std(max_z);
 final_p=(1-normcdf(abs(clustsum_dif_z)))*2; % for two tailed
 cluster_id = find(final_p < p_value);
 if isempty(cluster_id)
